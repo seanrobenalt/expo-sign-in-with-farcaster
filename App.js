@@ -1,9 +1,17 @@
 import "fastestsmallesttextencoderdecoder";
 
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Button, Linking } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  Linking,
+  TouchableOpacity,
+} from "react-native";
 import { AuthKitProvider, useSignIn } from "@farcaster/auth-kit";
 import { useEffect, useCallback } from "react";
+import { generateKey } from "./Signer";
 
 const config = {
   rpcUrl: "https://mainnet.optimism.io",
@@ -53,12 +61,20 @@ function Content() {
 
   const authenticated = isSuccess && validSignature;
 
+  const handlePlusPress = async () => {
+    generateKey();
+  };
+
   return (
     <View style={styles.container}>
       {authenticated ? (
         <View>
           <Text>Signed in!</Text>
           <Text>{data?.username}</Text>
+
+          <TouchableOpacity onPress={handlePlusPress} style={styles.plusButton}>
+            <Text style={styles.plusSign}>Grant Write Access ➕</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View>
@@ -78,5 +94,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  plusButton: {
+    marginLeft: 10,
+  },
+  plusSign: {
+    fontSize: 24,
   },
 });
