@@ -61,34 +61,26 @@ export const generateKey = async () => {
 
   Linking.openURL(deeplinkUrl);
 
-  const poll = async (token) => {
-    let signedKeyRequest = await axios
-      .get(`${warpcastApi}/v2/signed-key-request`, {
-        params: {
-          token,
-        },
-      })
-      .then((response) => response.data.result.signedKeyRequest);
+  const poll = async (token, privateKey) => {
+    while (true) {
+      await new Promise((r) => setTimeout(r, 2000));
 
-    while (signedKeyRequest.state !== "completed") {
-      signedKeyRequest = await axios
+      const signedKeyRequest = await axios
         .get(`${warpcastApi}/v2/signed-key-request`, {
           params: {
             token,
           },
         })
         .then((response) => response.data.result.signedKeyRequest);
+
+      if (signedKeyRequest.state === "completed") {
+        return {
+          userFid: signedKeyRequest.userFid,
+          privateKey,
+        };
+      }
     }
-
-    /* 
-      Object contains a userFid. 
-      You can save the private key securely with the userFid to use for writing messages later.
-      
-      const userFid = signedKeyRequest.userFid;
-    */
-
-    return signedKeyRequest;
   };
 
-  await poll(token);
+  return await poll(token, privateKey.toString("hex"));
 };

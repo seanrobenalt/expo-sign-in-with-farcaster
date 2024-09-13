@@ -1,4 +1,5 @@
 import "fastestsmallesttextencoderdecoder";
+import "react-native-get-random-values";
 
 import { StatusBar } from "expo-status-bar";
 import {
@@ -10,8 +11,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { AuthKitProvider, useSignIn } from "@farcaster/auth-kit";
-import { useEffect, useCallback } from "react";
-import { generateKey } from "./Signer";
+import { useEffect, useCallback, useState } from "react";
+import { generateKey } from "./utils/key";
+import { apiCreateUser, apiUpdateUser } from "./api/user";
 
 const config = {
   rpcUrl: "https://mainnet.optimism.io",
@@ -30,6 +32,8 @@ export default function App() {
 }
 
 function Content() {
+  const [userCreated, setUserCreated] = useState(false);
+
   const {
     signIn,
     url,
@@ -59,18 +63,31 @@ function Content() {
     }
   }, [channelToken, connect]);
 
+  useEffect(() => {
+    if (data && data.state === "completed" && !data.error && !userCreated) {
+      apiCreateUser({ fid: data.fid })
+        .then(() => {
+          setUserCreated(true);
+        })
+        .catch((error) => {
+          console.error("Error creating user:", error);
+        });
+    }
+  }, [data]);
+
   const authenticated = isSuccess && validSignature;
 
   const handlePlusPress = async () => {
-    generateKey();
+    generateKey().then((result) => {
+      apiUpdateUser(result.userFid, { signerKey: result.privateKey });
+    });
   };
 
   return (
     <View style={styles.container}>
       {authenticated ? (
         <View>
-          <Text>Signed in!</Text>
-          <Text>{data?.username}</Text>
+          <Text style={styles.mb}>Signed in as {data?.username}</Text>
 
           <TouchableOpacity onPress={handlePlusPress} style={styles.plusButton}>
             <Text style={styles.plusSign}>Grant Write Access ➕</Text>
@@ -99,6 +116,11 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   plusSign: {
-    fontSize: 24,
+    fontSize: 18,
+    marginBottom: 10,
+    marginTop: 10,
+  },
+  mb: {
+    marginBottom: 10,
   },
 });
